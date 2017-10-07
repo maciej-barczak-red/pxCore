@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(pxscene)
+find_package(PkgConfig)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
@@ -9,22 +10,70 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(PXCOREDIR ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 set(EXTDIR "${CMAKE_CURRENT_SOURCE_DIR}/../external")
-set(NODEDIR "${EXTDIR}/libnode-v6.9.0/")
+set(NODEDIR "${EXTDIR}/libnode-v6.11.4/")
 set(NODEINC "${NODEDIR}/src ${NODEDIR}/deps/uv/include ${NODEDIR}/deps/v8 ${NODEDIR}/deps/debugger-agent/include ${NODEDIR}/deps/v8/include ${NODEDIR}/deps/cares/include")
-set(ZLIBINC "${EXTDIR}/zlib-1.2.8/")
-set(CURLINC "${EXTDIR}/curl-7.40.0/include")
-set(JPGINC "${EXTDIR}/jpeg-9a")
-set(JPGTURBOINC "${EXTDIR}/libjpeg-turbo")
-set(PNGINC "${EXTDIR}/libpng-1.6.28")
-set(FREETYPEINC "${EXTDIR}/freetype-2.5.2/include")
+
+find_package(ZLIB)
+if (NOT ZLIB_FOUND)
+  message(STATUS "Using built-in zlib library")
+  set(ZLIB_INCLUDE_DIRS "${EXTDIR}/zlib-1.2.8/")
+endif(NOT ZLIB_FOUND)
+
+find_package(CURL)
+if (NOT CURL_FOUND)
+  message(STATUS "Using built-in curl library")
+  set(CURL_INCLUDE_DIRS "${EXTDIR}/curl-7.40.0/include")
+endif(NOT CURL_FOUND)
+
+find_package(JPEG)
+if (NOT JPEG_FOUND)
+  message(STATUS "Using built-in jpeg library")
+  set(JPEG_INCLUDE_DIRS "${EXTDIR}/jpeg-9a")
+endif(NOT JPEG_FOUND)
+
+pkg_search_module(TURBO_JPEG libturbojpeg)
+if (NOT TURBO_JPEG_FOUND)
+  message(STATUS "Using built-in libturbojpeg library")
+  set(TURBO_JPEG_INCLUDE_DIRS "${EXTDIR}/libjpeg-turbo")
+endif(NOT TURBO_JPEG_FOUND)
+
+find_package(PNG)
+if (NOT PNG_FOUND)
+  message(STATUS "Using built-in libpng library")
+  set(PNG_INCLUDE_DIRS "${EXTDIR}/libpng-1.6.28")
+endif(NOT PNG_FOUND)
+
+pkg_search_module(FREETYPE freetype2)
+if (NOT FREETYPE_FOUND)
+  message(STATUS "Using built-in freetype2 library")
+  set(FREETYPE_INCLUDE_DIRS "${EXTDIR}/freetype-2.5.2/include")
+endif(NOT FREETYPE_FOUND)
+
 set(WESTEROSINC ${EXTDIR}/westeros/external/install/include)
 set(WESTEROSSTUBINC ${EXTDIR}/westeros-stub)
-set(JPEGTURBOINC ${EXTDIR}/libjpeg-turbo)
-set(BREAKPADINC ${EXTDIR}/breakpad/src)
+
+pkg_search_module(TURBO_JPEG libturbojpeg)
+if (NOT TURBO_JPEG_FOUND)
+  message(STATUS "Using built-in libturbojpeg library")
+  set(TURBO_JPEG_INCLUDE_DIRS "${EXTDIR}/libjpeg-turbo")
+endif(NOT TURBO_JPEG_FOUND)
+
+set(BREAKPADINC ${EXTDIR}/breakpad/src/non-existing)
 set(RTREMOTEINC ${PXCOREDIR}/remote)
-set(GLEWINC ${EXTDIR}/glew-2.0.0/include)
+
+find_package(GLEW)
+if (NOT GLEW_FOUND)
+  message(STATUS "Using built-in glew library")
+  set(GLEW_INCLUDE_DIRS "${EXTDIR}/glew-2.0.0/include")
+endif(NOT GLEW_FOUND)
+
 set(WINSPARKLEINC ${EXTDIR}/WinSparkle/include)
-set(PTHREADINC ${EXTDIR}/pthread-2.9/)
+
+find_package(Threads)
+if (NOT Threads_FOUND)
+  message(STATUS "Using built-in pthreads library")
+  set(Threads_INCLUDE_DIRS "${EXTDIR}/pthread-2.9")
+endif(NOT Threads_FOUND)
 
 set(PX_LIBRARY_SUPPORT 1)
 set(PXWAYLAND_LIBRARY_SUPPORT 0)
@@ -67,10 +116,10 @@ if (APPLE)
     set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} RT_PLATFORM_LINUX)
     set(PXCORE_LIB_LOCATION ${PXCOREDIR}/build/mac)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fpermissive -g -Wall -Wno-attributes -Wall -Wextra")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fpermissive -g -Wall -Wno-attributes -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks -fPIC -fpermissive -g -Wall -Wno-attributes -Wall -Wextra")
     set(PXSCENE_LINK_DIRECTORIES ${PXCORE_LIB_LOCATION})
-    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_NODE_V_6_9 _DARWIN_USE_64_BIT_INODE=1 NODE_ARCH="x64" NODE_WANT_INTERNALS=1 V8_DEPRECATION_WARNINGS= NODE_SHARED_MODE NODE_USE_V8_PLATFORM=1 NODE_HAVE_I18N_SUPPORT=1 NODE_HAVE_SMALL_ICU=1 HAVE_INSPECTOR=1 V8_INSPECTOR_USE_STL=1 V8_INSPECTOR_USE_OLD_STL=1 HAVE_OPENSSL=1 HAVE_DTRACE=1 __POSIX__ NODE_PLATFORM=darwin DUCONFIG_NO_TRANSLITERATION=1 UCONFIG_NO_SERVICE=1 UCONFIG_NO_REGULAR_EXPRESSIONS=1 U_ENABLE_DYLOAD=0 U_STATIC_IMPLEMENTATION=1 U_HAVE_STD_STRING=0 UCONFIG_NO_BREAK_ITERATION=0 UCONFIG_NO_LEGACY_CONVERSION=1 UCONFIG_NO_CONVERSION=1 HTTP_PARSER_STRICT=0 _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64)
-    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_DEBUG_MODE PNG_APNG_SUPPORTED)
+    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} _DARWIN_USE_64_BIT_INODE=1 NODE_ARCH="x64" NODE_WANT_INTERNALS=1 NODE_SHARED_MODE NODE_USE_V8_PLATFORM=1 NODE_HAVE_I18N_SUPPORT=1 NODE_HAVE_SMALL_ICU=1 HAVE_INSPECTOR=1 V8_INSPECTOR_USE_STL=1 V8_INSPECTOR_USE_OLD_STL=1 HAVE_OPENSSL=1 HAVE_DTRACE=1 __POSIX__ NODE_PLATFORM=darwin DUCONFIG_NO_TRANSLITERATION=1 UCONFIG_NO_SERVICE=1 UCONFIG_NO_REGULAR_EXPRESSIONS=1 U_ENABLE_DYLOAD=0 U_STATIC_IMPLEMENTATION=1 U_HAVE_STD_STRING=0 UCONFIG_NO_BREAK_ITERATION=0 UCONFIG_NO_LEGACY_CONVERSION=1 UCONFIG_NO_CONVERSION=1 HTTP_PARSER_STRICT=0 _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64)
+    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} PNG_APNG_SUPPORTED)
     set(PLATFORM_SOURCES mac/pxContextUtils.mm)
     set(PXSCENE_LINKER_OPTIONS "-framework OpenGL -framework Cocoa -framework Foundation")
     set(PXSCENE_LINK_LIBRARIES)
@@ -80,7 +129,7 @@ if (APPLE)
     set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/curl/lib/.libs)
     set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/zlib)
     set(PLATFORM_LIBRARIES node pxCore rtCore_s pthread v8_libplatform png16 jpeg freetype curl z)
-    include_directories(AFTER ${ZLIBINC} ${CURLINC} ${JPGINC} ${JPGTURBOINC} ${PNGINC} ${FREETYPEINC})
+    include_directories(AFTER ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${JPEG_INCLUDE_DIRS} ${TURBO_JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS})
     if (DEFINED ENV{CODE_COVERAGE})
         message("enabling code coverage support")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -fno-inline")
@@ -97,7 +146,7 @@ if (APPLE)
     #set(PX_LIBRARY_SUPPORT 0)
 elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -fpermissive -g -Wall -Wno-attributes -Wall -Wextra")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -fpermissive -g -Wall -Wno-attributes -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks -fPIC -fpermissive -g -Wall -Wno-attributes -Wall -Wextra")
     execute_process(COMMAND "hostname" OUTPUT_VARIABLE HOSTNAME)
     string(STRIP ${HOSTNAME} HOSTNAME)
     set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} RT_PLATFORM_LINUX)
@@ -108,10 +157,10 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         set(PXSCENE_LINK_DIRECTORIES ${PXCORE_LIB_LOCATION})
         set(PLATFORM_SOURCES egl/pxContextUtils.cpp)
         set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} PXSCENE_DISABLE_PXCONTEXT_EXT)
-        set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_DEBUG_MODE PNG_APNG_SUPPORTED)
+        set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} PNG_APNG_SUPPORTED)
         include_directories(AFTER /opt/vc/include /opt/vc/include/interface/vcos/pthreads
                 /opt/vc/include/interface/vmcs_host/linux /opt/vc/include)
-        include_directories(AFTER ${ZLIBINC} ${CURLINC} ${JPGINC} ${JPGTURBOINC} ${PNGINC} ${FREETYPEINC})
+        include_directories(AFTER ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${JPEG_INCLUDE_DIRS} ${TURBO_JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS})
         set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} /opt/vc/lib/)
         set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/png/.libs)
         set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/jpg/.libs)
@@ -123,7 +172,7 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         if (BUILD_WITH_WINDOWLESS_EGL)
             message("Building pxscene for windowless EGL")
             set(PX_PLATFORM PX_PLATFORM_GENERIC_EGL)
-            set(PXSCENE_ADDITIONAL_RESOURCES ${PXSCENE_ADDITIONAL_RESOURCES} ${PXCOREDIR}/src/gles/pxWindowNative.cpp 
+            set(PXSCENE_ADDITIONAL_RESOURCES ${PXSCENE_ADDITIONAL_RESOURCES} ${PXCOREDIR}/src/gles/pxWindowNative.cpp
                   ${PXCOREDIR}/src/gles/LinuxInputEventDispatcher.cpp)
         elseif (BUILD_PXSCENE_WAYLAND_EGL)
             message("Building pxscene with wayland windows")
@@ -148,7 +197,7 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
             set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${NODEDIR}/out/Release/obj.target/deps/gtest )
             set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${NODEDIR}/out/Release/obj.target/deps/zlib )
            # libnode.a libv8_base.a libcares-libnode.a libhttp_parser.a libuv.a libv8_base.a libv8_libbase.a libv8_nosnapshot.a libv8_libplatform.a libv8_inspector_stl.a
-            
+
             set(PXSCENE_APP_LIBRARIES ${PXSCENE_APP_LIBRARIES} node v8_base cares http_parser uv v8_base v8_libbase v8_nosnapshot v8_libplatform v8_inspector_stl gtest zlib )
         else()
             set(PXSCENE_APP_LIBRARIES ${PXSCENE_APP_LIBRARIES} node v8_libplatform )
@@ -192,10 +241,10 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         set(PXCORE_LIB_LOCATION ${PXCOREDIR}/build/glut)
         set(PXSCENE_LINK_DIRECTORIES ${PXCORE_LIB_LOCATION})
         set(PLATFORM_SOURCES glut/pxContextUtils.cpp)
-        set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_LIBJPEG_TURBO HAS_LINUX_BREAKPAD)
-        set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_DEBUG_MODE PNG_APNG_SUPPORTED)
-        include_directories(AFTER ${ZLIBINC} ${CURLINC} ${JPGINC} ${JPGTURBOINC} ${PNGINC} ${GLUTINC} ${FREETYPEINC})
-        set(PLATFORM_LIBRARIES node pxCore rtCore_s pthread v8_libplatform png16 X11 glut GLEW GL dl rt turbojpeg breakpad_client jpeg freetype curl z)
+        set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_LIBJPEG_TURBO _HAS_LINUX_BREAKPAD)
+        set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} PNG_APNG_SUPPORTED)
+        include_directories(AFTER ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${JPEG_INCLUDE_DIRS} ${TURBO_JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${GLUTINC} ${FREETYPE_INCLUDE_DIRS})
+        set(PLATFORM_LIBRARIES node pxCore rtCore_s pthread v8_libplatform uv png16 X11 glut GLEW GL dl rt turbojpeg jpeg freetype curl z)
         set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/png/.libs)
         set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/jpg/.libs)
         set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/ft/objs/.libs)
@@ -204,7 +253,7 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         set(PX_LIBRARY_LINK_PXCORE 0)
     endif (HOSTNAME STREQUAL "raspberrypi")
     set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${EXTDIR}/libjpeg-turbo/.libs)
-    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_NODE_V_6_9 NODE_PLATFORM="linux" NODE_WANT_INTERNALS=1 V8_DEPRECATION_WARNINGS=1 NODE_SHARED_MODE NODE_USE_V8_PLATFORM=1 NODE_HAVE_I18N_SUPPORT=1 NODE_HAVE_SMALL_ICU=1 HAVE_INSPECTOR=1 V8_INSPECTOR_USE_STL=1 V8_INSPECTOR_USE_OLD_STL=1)
+    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} NODE_PLATFORM="linux" NODE_WANT_INTERNALS=1 NODE_SHARED_MODE NODE_USE_V8_PLATFORM=1 NODE_HAVE_I18N_SUPPORT=1 NODE_HAVE_SMALL_ICU=1 HAVE_INSPECTOR=1 V8_INSPECTOR_USE_STL=1 V8_INSPECTOR_USE_OLD_STL=1)
     set(PXSCENE_LINKER_OPTIONS "")
     #set(PXSCENE_LINK_LIBRARIES pthread)
     if (DEFINED ENV{CODE_COVERAGE})
@@ -239,18 +288,18 @@ elseif (WIN32)
             ${NODEDIR}/src/tcp_wrap.cc ${NODEDIR}/src/timer_wrap.cc ${NODEDIR}/src/tls_wrap.cc ${NODEDIR}/src/tty_wrap.cc
             ${NODEDIR}/src/udp_wrap.cc ${NODEDIR}/src/util.cc ${NODEDIR}/src/uv.cc ${PXCOREDIR}/src/utf8.c)
     set_source_files_properties(utf8.c PROPERTIES LANGUAGE CXX)
-    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ENABLE_DEBUG_MODE PNG_APNG_SUPPORTED HAS_WINDOWS_BREAKPAD)
+    set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} PNG_APNG_SUPPORTED HAS_WINDOWS_BREAKPAD)
     add_definitions(-DPX_PLATFORM_WIN -DRT_PLATFORM_WINDOWS -DWIN32 -DWIN32_LEAN_AND_MEAN -DGLEW_STATIC -D_TIMESPEC_DEFINED -D_CONSOLE
             -DCURL_STATICLIB -DRUNINMAIN -DENABLE_RT_NODE -DDISABLE_WAYLAND -DNODE_WANT_INTERNALS=1
-            -DENABLE_NODE_V_6_9 -DENABLE_V8_HEAP_PARAMS=1 -DV8_DEPRECATION_WARNINGS=1 -DNODE_SHARED_MODE -DHAVE_INSPECTOR=1
-            -DV8_INSPECTOR_USE_STL=1 -DV8_INSPECTOR_USE_OLD_STL=1 -DENABLE_DEBUG_MODE -DPNG_APNG_SUPPORTED -DENABLE_MAX_TEXTURE_SIZE
+            -DENABLE_V8_HEAP_PARAMS=1 -DNODE_SHARED_MODE -DHAVE_INSPECTOR=1
+            -DV8_INSPECTOR_USE_STL=1 -DV8_INSPECTOR_USE_OLD_STL=1 -DPNG_APNG_SUPPORTED -DENABLE_MAX_TEXTURE_SIZE
             -DHAVE_OPENSSL -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_HAS_EXCEPTIONS=0 -DBUILDING_V8_SHARED=1
             -DBUILDING_UV_SHARED=1 -DNODE_ARCH="ia32" -DNODE_USE_V8_PLATFORM=1 -DNODE_HAVE_I18N_SUPPORT=1 -DNODE_HAVE_SMALL_ICU=1
             -DHAVE_OPENSSL=1 -DHAVE_ETW=1 -DHAVE_PERFCTR=1 -DFD_SETSIZE=1024 -DNODE_PLATFORM="win32" -D_UNICODE=1 -DUCONFIG_NO_TRANSLITERATION=1
             -DUCONFIG_NO_SERVICE=1 -DUCONFIG_NO_REGULAR_EXPRESSIONS=1 -DU_ENABLE_DYLOAD=0 -DU_STATIC_IMPLEMENTATION=1
             -DU_HAVE_STD_STRING=0 -DUCONFIG_NO_BREAK_ITERATION=0 -DUCONFIG_NO_LEGACY_CONVERSION=1 -DUCONFIG_NO_CONVERSION=1
             -DHTTP_PARSER_STRICT=0 -DUSE_RENDER_STATS -D_HAS_EXCEPTIONS=0)
-    include_directories(AFTER ${ZLIBINC} ${CURLINC} ${JPGINC} ${JPGTURBOINC} ${PNGINC} ${FREETYPEINC} ${GLEWINC} ${WINSPARKLEINC} ${EXTDIR}/breakpad-chrome_55/src/)
+    include_directories(AFTER ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${JPEG_INCLUDE_DIRS} ${TURBO_JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${WINSPARKLEINC} ${EXTDIR}/breakpad-chrome_55/src/)
 
     include_directories(AFTER ${NODEDIR}/deps/openssl/openssl/include ${NODEDIR}/deps/http_parser
             ${NODEDIR}/deps/v8_inspector/third_party/v8_inspector/
@@ -312,7 +361,7 @@ set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} ${PX_PLATFORM} ENABLE_RT_NODE RUN
 
 
 include_directories(AFTER ${NODEDIR}/src ${NODEDIR}/deps/uv/include ${NODEDIR}/deps/v8 ${NODEDIR}/deps/debugger-agent/include ${NODEDIR}/deps/v8/include ${NODEDIR}/deps/cares/include)
-include_directories(AFTER ${WESTEROSINC} ${WESTEROSSTUBINC} ${JPEGTURBOINC} ${BREAKPADINC} ${RTREMOTEINC} ${PXCOREDIR}/src)
+include_directories(AFTER ${WESTEROSINC} ${WESTEROSSTUBINC} ${TURBO_JPEG_INCLUDE_DIRS} ${BREAKPADINC} ${RTREMOTEINC} ${PXCOREDIR}/src)
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/rasterizer)
 include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR}/rasterizer/xs_code)
@@ -376,8 +425,8 @@ endif (BUILD_PXSCENE_APP_WITH_PXSCENE_LIB)
 set(PXSCENE_LIB_FILES ${PXSCENE_COMMON_FILES})
 
 if (PXSCENE_COMPILE_WARNINGS_AS_ERRORS)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=address")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=address")
 endif (PXSCENE_COMPILE_WARNINGS_AS_ERRORS)
 
 if (BUILD_WITH_CXX_11)
@@ -461,7 +510,7 @@ if (BUILD_PXSCENE_APP)
         install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/browser DESTINATION . COMPONENT pxscene)
         install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/node_modules DESTINATION . COMPONENT pxscene)
         install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/rcvrcore DESTINATION . COMPONENT pxscene)
-        file(GLOB PXSCENE_INSTALL_FILES 
+        file(GLOB PXSCENE_INSTALL_FILES
            "${CMAKE_CURRENT_SOURCE_DIR}/*.js" "${CMAKE_CURRENT_SOURCE_DIR}/FreeSans.ttf"
            "${CMAKE_CURRENT_SOURCE_DIR}/*.json" "${CMAKE_CURRENT_SOURCE_DIR}/*.conf"
            "${CMAKE_CURRENT_SOURCE_DIR}/../external/vc.build/builds/*.dll" "${CMAKE_CURRENT_SOURCE_DIR}/Release/")
