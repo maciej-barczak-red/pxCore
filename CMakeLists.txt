@@ -5,6 +5,7 @@ option(BUILD_PXCORE "BUILD_PXCORE" ON)
 option(BUILD_PXSCENE "BUILD_PXSCENE" ON)
 option(BUILD_PX_TESTS "BUILD_PX_TESTS" OFF)
 option(BUILD_RTREMOTE_LIBS "BUILD_RTREMOTE_LIBS" OFF)
+option(WITH_SYSTEM_LIBRARIES "Uses the following system libraries: zlib curl jpeg libturbojpeg png freetype2" "OFF")
 
 if (BUILD_PXCORE)
     message("Building pxcore")
