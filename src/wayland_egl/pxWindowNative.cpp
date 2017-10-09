@@ -881,7 +881,7 @@ void pxWindowNative::initializeEgl()
 
     waylandDisplay* display = mDisplayRef.getDisplay();
 
-    display->egl.dpy = eglGetDisplay(display->display);
+    display->egl.dpy = eglGetDisplay((NativeDisplayType)display->display);
     assert(display->egl.dpy);
 
     ret = eglInitialize(display->egl.dpy, &major, &minor);
