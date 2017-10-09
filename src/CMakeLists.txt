@@ -80,6 +80,10 @@ if (NOT Threads_FOUND)
   set(Threads_INCLUDE_DIRS "${EXTDIR}/pthread-2.9")
 endif(NOT Threads_FOUND)
 
+if (PXCORE_WAYLAND_EGL)
+  pkg_search_module(WAYLAND_EGL wayland-egl REQUIRED)
+endif(PXCORE_WAYLAND_EGL)
+
 set(BUILD_RTCORE_SHARED_LIBRARY 1)
 
 if (APPLE)
@@ -138,9 +142,6 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../build/egl)
         add_definitions(-DENABLE_NODE_V_6_9 -DNODE_PLATFORM=linux -DNODE_WANT_INTERNALS=1 -DNODE_SHARED_MODE -DNODE_USE_V8_PLATFORM=1 -DNODE_HAVE_I18N_SUPPORT=1 -DNODE_HAVE_SMALL_ICU=1 -DHAVE_INSPECTOR=1 -DV8_INSPECTOR_USE_STL=1 -DV8_INSPECTOR_USE_OLD_STL=1)
         add_definitions(-DRT_PLATFORM_LINUX -DPX_NO_WINDOW -DENABLE_RT_NODE -DENABLE_HTTP_CACHE -DRUNINMAIN -DRAPIDJSON_HAS_STDSTRING)
-        set(PXCORE_STAGING_LIST $ENV{PXCORE_STAGING})
-        separate_arguments(PXCORE_STAGING_LIST)
-        include_directories(AFTER ${PXCORE_STAGING_LIST})
         set(PXCORE_FILES unix/rtMutexNative.cpp unix/rtThreadPoolNative.cpp
                 rtFileCache.cpp rtHttpCache.cpp)
         if (PXCORE_WAYLAND_EGL)
@@ -154,6 +155,7 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
             set(PXCORE_FILES ${PXCORE_FILES} gles/pxBufferNative.cpp gles/pxOffscreenNative.cpp
                 gles/pxEventLoopNative.cpp gles/pxTimerNative.cpp gles/pxClipboardNative.cpp)
         endif (PXCORE_WAYLAND_EGL)
+        include_directories(AFTER ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${JPEG_INCLUDE_DIRS} ${TURBO_JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${WAYLAND_EGL_INCLUDE_DIRS})
         set(PLATFORM_LINKER_FLAGS)
     else ()
         message("Building pxcore for glut")

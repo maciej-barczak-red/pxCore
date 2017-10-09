@@ -2054,7 +2054,7 @@ void pxContext::init()
 
 #ifdef PX_PLATFORM_GENERIC_EGL
   defaultEglContext = eglGetCurrentContext();
-  rtLogInfo("current context in init: %d", defaultEglContext);
+  rtLogInfo("current context in init: %p", defaultEglContext);
 #endif //PX_PLATFORM_GENERIC_EGL
 
   std::srand(unsigned (std::time(0)));
