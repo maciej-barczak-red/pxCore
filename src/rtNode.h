@@ -37,6 +37,18 @@
 #pragma GCC diagnostic ignored "-Wall"
 #endif
 
+#ifdef True
+#undef True
+#endif
+
+#ifdef False
+#undef False
+#endif
+
+#ifdef None
+#undef None
+#endif
+
 #include "uv.h"
 #include "include/v8.h"
 #include "include/libplatform/libplatform.h"
