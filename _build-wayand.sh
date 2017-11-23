@@ -2,6 +2,7 @@
 mkdir -p build-wayland
 pushd build-wayland
 cmake \
+  -DDISABLE_DEBUG_MODE=ON \
   -DPREFER_SYSTEM_LIBRARIES=ON \
   -DBUILD_RTREMOTE_LIBS=ON\
   -DBUILD_WITH_WAYLAND=ON \

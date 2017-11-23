@@ -2,6 +2,7 @@
 mkdir -p build-windowless-egl
 pushd build-windowless-egl
 cmake \
+  -DDISABLE_DEBUG_MODE=ON \
   -DBUILD_RTREMOTE_LIBS=ON\
   -DWINDOWLESS_EGL=ON \
   -DPXCORE_WAYLAND_EGL=ON \

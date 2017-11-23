@@ -2,6 +2,7 @@
 mkdir -p build-wayland-egl
 pushd build-wayland-egl
 cmake \
+  -DDISABLE_DEBUG_MODE=ON \
   -DBUILD_PX_TESTS=OFF \
   -DBUILD_WITH_STATIC_NODE=OFF \
   -DPREFER_SYSTEM_LIBRARIES=ON \
