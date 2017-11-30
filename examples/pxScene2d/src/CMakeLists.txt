@@ -13,6 +13,7 @@ set(NODEDIR "${EXTDIR}/node/")
 include(${PXCOREDIR}/cmake/CommOpts.cmake)
 include(${PXCOREDIR}/cmake/CommDeps.cmake)
 include(${PXCOREDIR}/cmake/NodeDeps.cmake)
+include(${PXCOREDIR}/cmake/SManDeps.cmake)
 
 pkg_search_module(WAYLAND_EGL wayland-egl)
 pkg_search_module(WAYLAND_CLIENT wayland-client)
@@ -156,7 +157,9 @@ elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
         set(PXSCENE_APP_LIBRARIES ${PXSCENE_APP_LIBRARIES} ${PXSCENE_ADDITIONAL_APP_LIBRARIES_LIST} )
 
         if (BUILD_WITH_SERVICE_MANAGER)
-            set(PXSCENE_APP_LIBRARIES ${PXSCENE_APP_LIBRARIES}  servicemanager)
+          include_directories(AFTER                                ${SMAN_DEPS_INCLUDE_DIRS})
+          set(PXSCENE_LINK_DIRECTORIES ${PXSCENE_LINK_DIRECTORIES} ${SMAN_DEPS_LIBRARY_DIRS})
+          set(PLATFORM_LIBRARIES ${PLATFORM_LIBRARIES}             ${SMAN_DEPS_LIBRARIES})
         endif (BUILD_WITH_SERVICE_MANAGER)
 
         set(PXSCENE_DEFINITIONS ${PXSCENE_DEFINITIONS} PX_NO_WINDOW ENABLE_V8_HEAP_PARAMS ENABLE_MAX_TEXTURE_SIZE BSTD_CPU_ENDIAN=BSTD_ENDIAN_LITTLE)
