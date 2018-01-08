@@ -53,7 +53,7 @@ pkill -9 -f pxscene.sh
 chmod 444 $VALGRINDLOGS
 
 #check for crash
-$TRAVIS_BUILD_DIR/ci/check_dump_cores_linux.sh `pwd` pxscene $EXECLOGS
+/bin/sh -x $TRAVIS_BUILD_DIR/ci/check_dump_cores_linux.sh `pwd` pxscene $EXECLOGS
 retVal=$?
 if [ "$retVal" -eq 1 ]
 	then

@@ -61,7 +61,7 @@ done
 echo "core happened during execution - $cored"
 if [ "$cored" -eq 1 ]
 	then
-	$TRAVIS_BUILD_DIR/ci/check_dump_cores_osx.sh `pwd` `ps -ef | grep pxscene |grep -v grep|grep -v pxscene.sh|awk '{print $2}'` /var/tmp/pxscene.log
+	/bin/sh -x $TRAVIS_BUILD_DIR/ci/check_dump_cores_osx.sh `pwd` `ps -ef | grep pxscene |grep -v grep|grep -v pxscene.sh|awk '{print $2}'` /var/tmp/pxscene.log
 	checkError $cored "Execution failed" "Core dump" "Run execution locally"
 fi
 

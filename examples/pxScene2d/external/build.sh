@@ -13,6 +13,11 @@ elif [ "$(uname)" = "Linux" ]; then
     make_parallel="$(cat /proc/cpuinfo | grep '^processor' | wc --lines)"
 fi
 
+# If using system libraries we're just interested in compiling:
+#   - libnode (shared library)
+#   - breakpad (static library)
+if [ "$PREFER_SYSTEM_LIBRARIES" != "ON" ]; then
+
 if [ ! -e ./curl/lib/.libs/libcurl.4.dylib ] ||
    [ "$(uname)" != "Darwin" ]
 then
@@ -121,6 +126,8 @@ then
   cd ..
 
 fi
+
+fi # [ "$PREFER_SYSTEM_LIBRARIES" != "ON" ]
 
 #--------- LIBNODE
 
