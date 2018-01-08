@@ -1,4 +1,8 @@
 #!/bin/sh
+
+echo "WARNING: release_osx.sh - functionality disabled on fork"
+exit 0
+
 export DEPLOY_DESTINATION=${DEPLOY_DESTINATION:-/var/www/html/releases}
 export DEPLOY_USER="${DEPLOY_USER:-ubuntu}"
 REMOTE_HOST="$1"
