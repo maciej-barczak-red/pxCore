@@ -1,59 +1,50 @@
-#!/bin/sh
+#!/bin/sh -ex
 
-checkError()
-{
-  if [ "$1" -ne 0 ]
-  then
-    echo "*********************************************************************";
-    echo "*********************SCRIPT FAIL DETAILS*****************************";
-    echo "CI failure reason: $2"
-    echo "Cause: $3"
-    echo "Reproduction/How to fix: $4"
-    echo "*********************************************************************";
-    echo "*********************************************************************";
-    exit 1
-  fi
-}
-
-if [ "$TRAVIS_OS_NAME" = "linux" ]
-then
-    if [ "$TRAVIS_EVENT_TYPE" = "cron" ] || [ "$TRAVIS_EVENT_TYPE" = "api" ]
-    then
-      echo "Ignoring script stage for $TRAVIS_EVENT_TYPE event";
-      exit 0
-    fi
+if [ "$TRAVIS_CREATE_CACHE_ONLY" = "true" ]; then
+    echo "Ignoring script stage for cache creation event";
+    exit 0
 fi
 
-
-if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ] ;
-then
-  if [ "$TRAVIS_OS_NAME" = "linux" ]; 
-  then 
-    export DISPLAY=:99.0
-    sh -e /etc/init.d/xvfb start
-    sleep 3
-  fi
+if [ "$TRAVIS_EVENT_TYPE" = "cron" ] || [ "$TRAVIS_EVENT_TYPE" = "api" ]; then
+    echo "Ignoring script stage for $TRAVIS_EVENT_TYPE event";
+    exit 0
 fi
 
 retval=0
 ulimit -c unlimited
 export DUMP_STACK_ON_EXCEPTION=1
 cd $TRAVIS_BUILD_DIR/ci
-if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ] ;
-then
-  sh build_px.sh "build_$TRAVIS_OS_NAME.sh" "unittests_$TRAVIS_OS_NAME.sh" "execute_$TRAVIS_OS_NAME.sh" "code_coverage_$TRAVIS_OS_NAME.sh"
+
+if [ "$TRAVIS_PREFER_SYSTEM_LIBRARIES" = "ON" ]; then
+    export PREFER_SYSTEM_LIBRARIES=ON
 else
-  sh build_px.sh "build_$TRAVIS_OS_NAME.sh"
-fi
-checkError $? "Build/unittests/execution failed" "Either build problem/execution problem" "Analyze corresponding log file"
-
-
-if [ "$TRAVIS_EVENT_TYPE" = "cron" ] || [ "$TRAVIS_EVENT_TYPE" = "api" ] ;
-then
-  cp $TRAVIS_BUILD_DIR/examples/pxScene2d/src/deploy/mac/*.dmg $TRAVIS_BUILD_DIR/artifacts/.
-  checkError $? "Copying dmg file failed" "Could be build problem or file not generated" "Analyze build logs"
-  cp $TRAVIS_BUILD_DIR/examples/pxScene2d/src/deploy/mac/software_update.plist $TRAVIS_BUILD_DIR/artifacts/.
-  checkError $? "Copying software_update.plist failed" "Could be build problem or file not generated" "Analyze build logs"
+    export PREFER_SYSTEM_LIBRARIES=OFF
 fi
 
-exit 0;
+if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then
+    /bin/sh -x "./build_$TRAVIS_OS_NAME.sh"
+
+    if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+        export DISPLAY=:99.0
+        /bin/sh -e /etc/init.d/xvfb start
+        sleep 3
+    fi
+
+    /bin/sh -x "./unittests_$TRAVIS_OS_NAME.sh"
+    /bin/sh -x "./execute_$TRAVIS_OS_NAME.sh"
+    /bin/sh -x "./code_coverage_$TRAVIS_OS_NAME.sh"
+else
+    /bin/sh -x "./build_$TRAVIS_OS_NAME.sh"
+fi
+
+if [ "$TRAVIS_EVENT_TYPE" = "cron" ] || [ "$TRAVIS_EVENT_TYPE" = "api" ]; then
+    cp $TRAVIS_BUILD_DIR/examples/pxScene2d/src/deploy/mac/*.dmg $TRAVIS_BUILD_DIR/artifacts/.
+    cp $TRAVIS_BUILD_DIR/examples/pxScene2d/src/deploy/mac/software_update.plist $TRAVIS_BUILD_DIR/artifacts/.
+fi
+
+if [ "$TRAVIS_EVENT_TYPE" = "push" ] || [ "$TRAVIS_EVENT_TYPE" = "pull_request" ]; then
+    codecov --build "$TRAVIS_OS_NAME-$TRAVIS_COMMIT-$TRAVIS_BUILD_NUMBER" -X gcov -f $TRAVIS_BUILD_DIR/tracefile
+    genhtml -o $TRAVIS_BUILD_DIR/logs/codecoverage $TRAVIS_BUILD_DIR/tracefile
+fi
+
+exit 0
