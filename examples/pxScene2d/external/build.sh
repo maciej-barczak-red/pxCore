@@ -13,6 +13,8 @@ elif [ "$(uname)" = "Linux" ]; then
     make_parallel="$(cat /proc/cpuinfo | grep '^processor' | wc --lines)"
 fi
 
+make_parallel=$(($make_parallel + 2))
+
 if [ ! -e ./curl/lib/.libs/libcurl.4.dylib ] ||
    [ "$(uname)" != "Darwin" ]
 then
