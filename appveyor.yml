@@ -1,0 +1,58 @@
+#
+# pxCore appvoyer configuration file
+#
+# author: Damian Wrobel <dwrobel@ertelnet.rybnik.pl>
+#
+
+version: 1.0.{build}
+
+max_jobs: 1
+
+clone_depth: 50
+
+platform: x86
+
+image: Visual Studio 2017
+
+environment:
+  S: "c:/dw/pxCore"
+  T: "temp"
+  N: "_CPack_Packages/win32/NSIS/pxscene-setup"
+
+clone_folder: "c:/dw/pxCore"
+
+init:
+  - echo environment setup...
+  - git config --system core.longpaths true
+  - cmake --version
+  - ps: "ls \"C:/\""
+  - call "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Auxiliary/Build/vcvars32.bat" x86
+
+install:
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+before_build:
+  - echo build dependencies...
+  - cd %S%
+  - cd examples\pxScene2d\external
+  - buildWindows.bat
+
+build:
+  echo build pxCore...
+  cd %S%
+  mkdir %T%
+  cd %T%
+  cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON ..
+  cmake --build . --config Release -- /m
+
+after_build:
+  - echo build installer...
+  - cd %S%
+  - cd %T%
+  - cpack .
+  - cd %N%
+  - dir
+
+artifacts:
+  - path: "%S%/%T%/%N%/*"
