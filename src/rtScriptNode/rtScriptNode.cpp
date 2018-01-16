@@ -388,9 +388,9 @@ void rtNodeContext::createEnvironment()
                            exec_argv);
 
    array_buffer_allocator->set_env(mEnv);
-
-  mIsolate->SetAbortOnUncaughtExceptionCallback(
-        ShouldAbortOnUncaughtException);
+// disabled by dw TODO: correct it!
+//  mIsolate->SetAbortOnUncaughtExceptionCallback(
+//        ShouldAbortOnUncaughtException);
 #ifdef ENABLE_DEBUG_MODE
   // Start debug agent when argv has --debug
   if (use_debug_agent)
@@ -474,21 +474,23 @@ void rtNodeContext::createEnvironment()
                            exec_argc,
                            exec_argv);
 
-  // Start debug agent when argv has --debug
-  if (use_debug_agent)
-  {
-    rtLogWarn("use_debug_agent\n");
-    StartDebug(mEnv, debug_wait_connect);
-  }
+// disabled by dw
+//  // Start debug agent when argv has --debug
+//  if (use_debug_agent)
+//  {
+//    rtLogWarn("use_debug_agent\n");
+//    StartDebug(mEnv, debug_wait_connect);
+//  }
 
   // Load Environment.
   LoadEnvironment(mEnv);
 
-  // Enable debugger
-  if (use_debug_agent)
-  {
-    EnableDebug(mEnv);
-  }
+// disabled by dw
+//  // Enable debugger
+//  if (use_debug_agent)
+//  {
+//    EnableDebug(mEnv);
+//  }
 #endif //ENABLE_NODE_V_6_9
 }
 
