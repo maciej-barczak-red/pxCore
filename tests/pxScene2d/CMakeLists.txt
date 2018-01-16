@@ -12,6 +12,7 @@ set(EXTDIR "${PXCOREDIR}/examples/pxScene2d/external")
 include(../../cmake/CommOpts.cmake)
 include(../../cmake/CommDeps.cmake)
 include(../../cmake/NodeDeps.cmake)
+include(../../cmake/DukeDeps.cmake)
 
 set(WESTEROSINC ${EXTDIR}/westeros/external/install/include)
 set(WESTEROSSTUBINC ${EXTDIR}/westeros-stub)
@@ -35,6 +36,7 @@ include_directories(AFTER ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(${COMM_DEPS_DEFINITIONS})
 include_directories(AFTER
             ${NODE_INCLUDE_DIRS}
+            ${DUKE_INCLUDE_DIRS}
        ${COMM_DEPS_INCLUDE_DIRS}
               ${WESTEROSSTUBINC}
      ${WAYLAND_EGL_INCLUDE_DIRS}
@@ -43,6 +45,7 @@ include_directories(AFTER
 
 set(PXSCENETEST_LINK_DIRECTORIES ${PXSCENETEST_LINK_DIRECTORIES}
             ${NODE_LIBRARY_DIRS}
+            ${DUKE_LIBRARY_DIRS}
        ${COMM_DEPS_LIBRARY_DIRS}
      ${WAYLAND_EGL_LIBRARY_DIRS}
   ${WAYLAND_CLIENT_LIBRARY_DIRS}
@@ -51,11 +54,13 @@ set(PXSCENETEST_LINK_DIRECTORIES ${PXSCENETEST_LINK_DIRECTORIES}
 
 set(PXSCENETEST_LINK_LIBRARIES ${PXSCENETEST_LINK_LIBRARIES}
                ${NODE_LIBRARIES}
+               ${DUKE_LIBRARIES}
           ${COMM_DEPS_LIBRARIES}
         ${WAYLAND_EGL_LIBRARIES}
 )
 
 message(STATUS "NODE_LIBRARY_DIRS: ${NODE_LIBRARY_DIRS}")
+message(STATUS "DUKE_LIBRARY_DIRS: ${DUKE_LIBRARY_DIRS}")
 
 if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     set(PXSCENETEST_LINK_DIRECTORIES ${PXSCENETEST_LINK_DIRECTORIES} ${PXCOREDIR}/remote)
