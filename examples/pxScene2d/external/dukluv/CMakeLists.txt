@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8.9)
 
 project (dukluv)
 
+if (WIN32)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+endif (WIN32)
+
 include(duktape.cmake)
 include(uv.cmake)
 
