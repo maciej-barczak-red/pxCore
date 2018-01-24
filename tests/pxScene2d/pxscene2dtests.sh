@@ -38,7 +38,7 @@ PathD=$externalLibs:$pxScene2dSrc:$externalDir/libnode-v6.9.0/out/Debug/obj.targ
 PathR=$externalLibs:$pxScene2dSrc:$externalDir/libnode-v6.9.0/out/Release/obj.target
 export LD_LIBRARY_PATH=$PathR:$pxCoreLibs
 fi
-export NODE_PATH=$pxScene2dSrc
+export NODE_PATH=${THIS_DIR}
 
 export RT_LOG_LEVEL=warn
 
