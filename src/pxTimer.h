@@ -23,6 +23,12 @@
 
 #include <inttypes.h>
 
+/* helper function */
+inline uint64_t uint64_diff(const uint64_t x, const uint64_t y)
+{
+  return x >= y ? x - y : y - x;
+}
+
 #if __cplusplus >= 201103L // {
     // Common implementation for all modern platforms supporting >= c++11
 

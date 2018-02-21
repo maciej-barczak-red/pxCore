@@ -533,7 +533,6 @@ void pxWindowNative::runEventLoopOnce()
 }
 
 
-
 void pxWindowNative::runEventLoop()
 {
     exitFlag = false;
@@ -561,13 +560,15 @@ void pxWindowNative::runEventLoop()
     fileDescriptors[0].fd = wl_display_get_fd(display->display);
     fileDescriptors[0].events = POLLIN;
     int pollResult = 0;
-    int pollTimeout = 1000 / framerate;
+    int pollTimeout = (1000 / framerate) / 2;
 #endif //PXCORE_WL_DISPLAY_READ_EVENTS
-    const double maxSleepTime = (1000.0 / framerate) * 1000;
-    rtLogInfo("max sleep time in microseconds: %f", maxSleepTime);
+
+    const uint64_t frameLength_us = (1000UL / framerate) * 1000;
+    rtLogInfo("frame length %u [us]", (unsigned int)frameLength_us);
+    uint64_t frameStart_us = pxMicroseconds();
+
     while(!exitFlag)
     {
-        double startMicroseconds = pxMicroseconds();
         std::vector<pxWindowNative*>::iterator i;
         for (i = windowVector.begin(); i < windowVector.end(); i++)
         {
@@ -581,7 +582,11 @@ void pxWindowNative::runEventLoop()
         }
         wl_display_flush(display->display);
 
-        pollResult = poll(fileDescriptors, 1, pollTimeout);
+        do
+        {
+          pollResult = poll(fileDescriptors, 1, pollTimeout);
+        } while(pollResult == -1 && pollResult == EINTR);
+
         if (pollResult <= 0)
           wl_display_cancel_read(display->display);
         else
@@ -589,12 +594,17 @@ void pxWindowNative::runEventLoop()
 #endif //PXCORE_WL_DISPLAY_READ_EVENTS
 
         wl_display_dispatch_pending(display->display);
-        const double processTime = pxMicroseconds() - startMicroseconds;
 
-        if (processTime < maxSleepTime)
-        {
-          const double sleepTime = maxSleepTime - (processTime > 0.0 ? processTime : 0.0);
-          pxSleepUS(sleepTime);
+        { // compute next frame start time
+          const uint64_t currentTime_us     =  pxMicroseconds();
+          const uint64_t processTime_us     =  uint64_diff(currentTime_us, frameStart_us);
+          const uint64_t processTime_frames = (processTime_us + (frameLength_us - 1)) / frameLength_us;
+
+          frameStart_us += processTime_frames * frameLength_us;
+
+          const uint64_t sleepTime_us = uint64_diff(frameStart_us, currentTime_us);
+
+          pxSleepUS(sleepTime_us);
         }
     }
 }
