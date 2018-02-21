@@ -23,42 +23,42 @@
 #include <time.h>
 #endif
 
-double  pxSeconds()
+uint64_t pxSeconds()
 {
 #ifndef USE_CGT
-  timeval tv;
-  gettimeofday(&tv, NULL);
-  return tv.tv_sec + ((double)tv.tv_usec/1000000);
+    timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec;
 #else
-  timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec + ((double)ts.tv_nsec/1000000000);
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec;
 #endif
 }
 
-double pxMilliseconds()
+uint64_t pxMilliseconds()
 {
 #ifndef USE_CGT
-  timeval tv;
-  gettimeofday(&tv, NULL);
-  return ((double)(tv.tv_sec * 1000) + ((double)tv.tv_usec/1000));
+    timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000UL) + (tv.tv_usec/1000UL);
 #else
-  timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ((double)(ts.tv_sec * 1000) + ((double)ts.tv_nsec/1000000));
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000UL) + (ts.tv_nsec/1000000UL));
 #endif
 }
 
-double  pxMicroseconds()
+uint64_t pxMicroseconds()
 {
 #ifndef USE_CGT
-  timeval tv;
-  gettimeofday(&tv, NULL);
-  return (tv.tv_sec * 1000000) + tv.tv_usec;
+    timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000000UL) + tv.tv_usec;
 #else
-  timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ((double)(ts.tv_sec * 1000000) + ((double)ts.tv_nsec/1000));
+    timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000000UL) + (ts.tv_nsec/1000UL));
 #endif
 }
 
@@ -69,7 +69,7 @@ void pxSleepUS(uint64_t usToSleep)
 
 void pxSleepMS(uint32_t msToSleep)
 {
-  pxSleepUS(msToSleep*(uint64_t)1000);
+  pxSleepUS(msToSleep * 1000UL);
 }
 
 #endif // __cplusplus < 201103L

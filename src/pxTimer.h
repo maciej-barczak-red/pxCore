@@ -30,21 +30,21 @@
 #   include <ratio>
 #   include <thread>
 
-    inline double pxMicroseconds()
+    inline uint64_t pxMicroseconds()
     {
         auto t_now = std::chrono::high_resolution_clock::now();
         auto t_us = std::chrono::time_point_cast<std::chrono::microseconds>(t_now).time_since_epoch();
         return t_us.count();
     }
 
-    inline double pxMilliseconds()
+    inline uint64_t pxMilliseconds()
     {
-        return pxMicroseconds() / 1000.0;
+        return pxMicroseconds() / 1000;
     }
 
-    inline double pxSeconds()
+    inline uint64_t pxSeconds()
     {
-        return pxMilliseconds() / 1000.0;
+        return pxMilliseconds() / 1000;
     }
 
     inline void pxSleepUS(const uint64_t usToSleep)
@@ -58,9 +58,9 @@
     }
 #else // }{
     // Legacy, platform specific, implementation for old platforms not supporting c++11
-    double pxMicroseconds();
-    double pxMilliseconds();
-    double pxSeconds();
+    uint64_t pxMicroseconds();
+    uint64_t pxMilliseconds();
+    uint64_t pxSeconds();
 
     void pxSleepMS(uint32_t msToSleep);
     void pxSleepUS(uint64_t usToSleep);

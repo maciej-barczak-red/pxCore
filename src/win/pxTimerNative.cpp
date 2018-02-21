@@ -11,7 +11,7 @@
 static bool gFreqInitialized = false;
 static LARGE_INTEGER gFreq;
 
-double pxSeconds()
+uint64_t pxSeconds()
 {
     if (!gFreqInitialized)
     {
@@ -22,10 +22,10 @@ double pxSeconds()
     LARGE_INTEGER c;
     ::QueryPerformanceCounter(&c);
 
-    return (c.QuadPart / (double)gFreq.QuadPart);
+    return (c.QuadPart / gFreq.QuadPart);
 }
 
-double pxMilliseconds()
+uint64_t pxMilliseconds()
 {
     if (!gFreqInitialized)
     {
@@ -36,10 +36,10 @@ double pxMilliseconds()
     LARGE_INTEGER c;
     ::QueryPerformanceCounter(&c);
 
-    return (c.QuadPart * 1000) / (double)gFreq.QuadPart;
+    return (c.QuadPart * 1000UL) / gFreq.QuadPart;
 }
 
-double pxMicroseconds()
+uint64_t pxMicroseconds()
 {
     if (!gFreqInitialized)
     {
@@ -50,7 +50,7 @@ double pxMicroseconds()
     LARGE_INTEGER c;
     ::QueryPerformanceCounter(&c);
 
-    return (c.QuadPart * 1000000) / (double)gFreq.QuadPart;
+    return (c.QuadPart * 1000000UL) / gFreq.QuadPart;
 }
 
 void pxSleepUS(uint64_t usToSleep)
