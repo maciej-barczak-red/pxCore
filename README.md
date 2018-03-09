@@ -1,3 +1,7 @@
+[![Linux build status](https://semaphoreci.com/api/v1/dwrobel/pxcore/branches/onemw-wayland-egl-44/shields_badge.svg)](https://semaphoreci.com/dwrobel/pxcore)
+[![Windows build status](https://ci.appveyor.com/api/projects/status/isygj1i8cupcoi04/branch/onemw-wayland-egl-44?svg=true)](https://ci.appveyor.com/project/dwrobel/pxcore/branch/onemw-wayland-egl-44)
+
+
 # pxCore
 
 pxCore is a small opensource library that provides a portable framebuffer and windowing abstraction for C++. This library is intended to hide the complexity of writing rasterization code on multiple platforms and allows you to easily write the following sorts of things in a portable way.
