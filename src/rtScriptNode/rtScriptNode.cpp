@@ -274,11 +274,15 @@ extern args_t *s_gArgs;
 #endif
 namespace node
 {
+#ifdef NODE_VERSION_AT_LEAST(8,9,4)
+extern DebugOptions debug_options;
+#else
 extern bool use_debug_agent;
 #ifdef HAVE_INSPECTOR
 extern bool use_inspector;
 #endif
 extern bool debug_wait_connect;
+#endif
 }
 
 static int exec_argc;
@@ -374,8 +378,14 @@ void rtNodeContext::createEnvironment()
 
   // Create Environment.
 
+#if NODE_VERSION_AT_LEAST(8,9,4)
+  IsolateData isolateData(mIsolate,uv_default_loop());
+
+  mEnv = CreateEnvironment(&isolateData,
+#else
   mEnv = CreateEnvironment(mIsolate,
                            uv_default_loop(),
+#endif
                            local_context,
 #ifdef ENABLE_DEBUG_MODE
                            g_argc,
@@ -387,6 +397,7 @@ void rtNodeContext::createEnvironment()
                            exec_argc,
                            exec_argv);
 
+#if !NODE_VERSION_AT_LEAST(8,9,4)
    array_buffer_allocator->set_env(mEnv);
 
   mIsolate->SetAbortOnUncaughtExceptionCallback(
@@ -411,12 +422,13 @@ void rtNodeContext::createEnvironment()
     }
   }
 #endif
-  // Load Environment.
+#endif
+// Load Environment.
   {
     Environment::AsyncCallbackScope callback_scope(mEnv);
     LoadEnvironment(mEnv);
   }
-#ifdef ENABLE_DEBUG_MODE
+#if defined(ENABLE_DEBUG_MODE) && !NODE_VERSION_AT_LEAST( 8, 9, 4 )
   if (use_debug_agent)
   {
     rtLogWarn("use_debug_agent\n");
@@ -475,20 +487,24 @@ void rtNodeContext::createEnvironment()
                            exec_argv);
 
   // Start debug agent when argv has --debug
+#if defined(ENABLE_DEBUG_MODE) && !NODE_VERSION_AT_LEAST( 8, 9, 4 )
   if (use_debug_agent)
   {
     rtLogWarn("use_debug_agent\n");
     StartDebug(mEnv, debug_wait_connect);
   }
+#endif
 
   // Load Environment.
   LoadEnvironment(mEnv);
 
   // Enable debugger
+#if !NODE_VERSION_AT_LEAST( 8, 9, 4 )
   if (use_debug_agent)
   {
     EnableDebug(mEnv);
   }
+#endif
 #endif //ENABLE_NODE_V_6_9
 }
 
@@ -597,6 +613,7 @@ rtNodeContext::~rtNodeContext()
       HandleScope     handle_scope(mIsolate);
 
       RunAtExit(mEnv);
+  #if !NODE_VERSION_AT_LEAST(8,9,4)
     #ifdef ENABLE_NODE_V_6_9
       if (nodeTerminated)
       {
@@ -609,6 +626,7 @@ rtNodeContext::~rtNodeContext()
     #else
       mEnv->Dispose();
     #endif // ENABLE_NODE_V_6_9
+  #endif
       mEnv = NULL;
       #ifndef USE_CONTEXTIFY_CLONES
       HandleMap::clearAllForContext(mId);
