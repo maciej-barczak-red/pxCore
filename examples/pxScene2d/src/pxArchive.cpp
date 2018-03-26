@@ -151,7 +151,7 @@ rtError pxArchive::initFromUrl(const rtString& url, const rtString& origin)
         }
         if( i >= node_path.c ) {
             mLoadStatus.set("statusCode",1);
-            gUIThreadQueue.addTask(pxArchive::onDownloadCompleteUI,this,NULL);
+            gUIThreadQueue->addTask(pxArchive::onDownloadCompleteUI,this,NULL);
         }
     }
     else
