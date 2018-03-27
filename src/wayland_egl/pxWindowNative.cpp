@@ -568,7 +568,6 @@ void pxWindowNative::runEventLoop()
     fileDescriptors[0].fd = wl_display_get_fd(display->display);
     fileDescriptors[0].events = POLLIN;
     int pollResult = 0;
-    int pollTimeout = 1000 / framerate;
 #endif //PXCORE_WL_DISPLAY_READ_EVENTS
     while(!exitFlag)
     {
@@ -586,14 +585,19 @@ void pxWindowNative::runEventLoop()
         }
         wl_display_flush(display->display);
 
-        pollResult = poll(fileDescriptors, 1, pollTimeout);
+        do
+        {
+          pollResult = poll(fileDescriptors, 1, 1);
+        } while(pollResult == -1 && pollResult == EINTR);
+
         if (pollResult <= 0)
           wl_display_cancel_read(display->display);
         else
           wl_display_read_events(display->display);
+#else
+        wl_display_dispatch_pending(display->display);
 #endif //PXCORE_WL_DISPLAY_READ_EVENTS
 
-        wl_display_dispatch_pending(display->display);
         double delay = pxMicroseconds();
         double nextWakeUp = wakeUpBase + offsets[ frameNo ];
         while( delay > nextWakeUp ) {
