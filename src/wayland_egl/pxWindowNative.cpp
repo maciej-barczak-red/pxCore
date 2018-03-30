@@ -556,13 +556,6 @@ void pxWindowNative::runEventLoop()
 
     rtLogInfo("pxcore framerate: %d", framerate);
 
-    uint64_t* offsets = new  uint64_t[ framerate ];
-    for( int i = 0; i < framerate; ++i )
-        offsets[ i ] = (i*1000000+framerate-1)/framerate;
-
-    int frameNo = 1;
-    double wakeUpBase = pxMicroseconds();
-    int count = 0;
 #ifdef PXCORE_WL_DISPLAY_READ_EVENTS
     pollfd fileDescriptors[1];
     fileDescriptors[0].fd = wl_display_get_fd(display->display);
@@ -570,9 +563,11 @@ void pxWindowNative::runEventLoop()
     int pollResult = 0;
     int pollTimeout = 1000 / framerate;
 #endif //PXCORE_WL_DISPLAY_READ_EVENTS
+    const double maxSleepTime = (1000.0 / framerate) * 1000;
+    rtLogInfo("max sleep time in microseconds: %f", maxSleepTime);
     while(!exitFlag)
     {
-        count++;
+        double startMicroseconds = pxMicroseconds();
         std::vector<pxWindowNative*>::iterator i;
         for (i = windowVector.begin(); i < windowVector.end(); i++)
         {
@@ -594,21 +589,14 @@ void pxWindowNative::runEventLoop()
 #endif //PXCORE_WL_DISPLAY_READ_EVENTS
 
         wl_display_dispatch_pending(display->display);
-        double delay = pxMicroseconds();
-        double nextWakeUp = wakeUpBase + offsets[ frameNo ];
-        while( delay > nextWakeUp ) {
-            frameNo++;
-            if( frameNo >= framerate ) {
-                count = 0;
-                wakeUpBase += 1000000;
-                frameNo = 0;
-            }
-            nextWakeUp = wakeUpBase + offsets[ frameNo ];
+        const double processTime = pxMicroseconds() - startMicroseconds;
+
+        if (processTime < maxSleepTime)
+        {
+          const double sleepTime = maxSleepTime - (processTime > 0.0 ? processTime : 0.0);
+          pxSleepUS(sleepTime);
         }
-        delay = nextWakeUp - delay;
-        pxSleepUS( delay );
     }
-    delete [] offsets;
 }
 
 
