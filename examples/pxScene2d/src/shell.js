@@ -22,7 +22,7 @@ px.import({ scene: 'px:scene.1.js',
   var originalURL = (!url || url==="") ? "browser.js":url;
   console.log("url:",originalURL);
 
-  var    blackBg = scene.create({t:"rect", fillColor:0x000000ff,lineColor:0xffff0080,lineWidth:0,x:0,y:0,w:1280,h:720,a:0,parent:scene.root});
+  var    blackBg = scene.create({t:"rect", fillColor:0x00000000,lineColor:0xffff0080,lineWidth:0,x:0,y:0,w:1280,h:720,a:0,parent:scene.root});
   var childScene = scene.create({t:"scene", url:originalURL,parent:scene.root});
   childScene.focus = true;
 
