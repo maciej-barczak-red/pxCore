@@ -1,0 +1,77 @@
+Index: node-v8.9.4/deps/v8/src/regexp/regexp-parser.cc
+===================================================================
+--- node-v8.9.4.orig/deps/v8/src/regexp/regexp-parser.cc
++++ node-v8.9.4/deps/v8/src/regexp/regexp-parser.cc
+@@ -1221,6 +1221,7 @@ bool IsSupportedBinaryProperty(UProperty
+     case UCHAR_DEFAULT_IGNORABLE_CODE_POINT:
+     case UCHAR_DEPRECATED:
+     case UCHAR_DIACRITIC:
++#ifdef NODE_HAVE_SMALL_ICU
+     case UCHAR_EMOJI:
+     // TODO(yangguo): Uncomment this once we upgrade to ICU 60.
+     //                See https://ssl.icu-project.org/trac/ticket/13062
+@@ -1228,6 +1229,7 @@ bool IsSupportedBinaryProperty(UProperty
+     case UCHAR_EMOJI_MODIFIER_BASE:
+     case UCHAR_EMOJI_MODIFIER:
+     case UCHAR_EMOJI_PRESENTATION:
++#endif /* ifdef NODE_HAVE_SMALL_ICU */
+     case UCHAR_EXTENDER:
+     case UCHAR_GRAPHEME_BASE:
+     case UCHAR_GRAPHEME_EXTEND:
+Index: node-v8.9.4/src/node_i18n.cc
+===================================================================
+--- node-v8.9.4.orig/src/node_i18n.cc
++++ node-v8.9.4/src/node_i18n.cc
+@@ -770,8 +770,11 @@ static int GetColumnWidth(UChar32 codepo
+                                U_GC_ME_MASK |  // Enclosing mark
+                                U_GC_MN_MASK;   // Nonspacing mark
+   if (codepoint != 0x00AD &&  // SOFT HYPHEN is Cf but not zero-width
+-      ((U_MASK(u_charType(codepoint)) & zero_width_mask) ||
+-       u_hasBinaryProperty(codepoint, UCHAR_EMOJI_MODIFIER))) {
++      ((U_MASK(u_charType(codepoint)) & zero_width_mask)
++#ifdef NODE_HAVE_SMALL_ICU
++       || u_hasBinaryProperty(codepoint, UCHAR_EMOJI_MODIFIER)
++#endif  // NODE_HAVE_SMALL_ICU
++      )) {
+     return 0;
+   }
+ 
+@@ -790,9 +793,11 @@ static int GetColumnWidth(UChar32 codepo
+       }
+       // Fall through if ambiguous_as_full_width if false.
+     case U_EA_NEUTRAL:
++#ifdef NODE_HAVE_SMALL_ICU
+       if (u_hasBinaryProperty(codepoint, UCHAR_EMOJI_PRESENTATION)) {
+         return 2;
+       }
++#endif  // NODE_HAVE_SMALL_ICU
+       // Fall through
+     case U_EA_HALFWIDTH:
+     case U_EA_NARROW:
+@@ -808,8 +813,9 @@ static void GetStringWidth(const Functio
+     return;
+ 
+   bool ambiguous_as_full_width = args[1]->BooleanValue();
++#ifdef NODE_HAVE_SMALL_ICU
+   bool expand_emoji_sequence = args[2]->BooleanValue();
+-
++#endif  // NODE_HAVE_SMALL_ICU
+   if (args[0]->IsNumber()) {
+     args.GetReturnValue().Set(
+         GetColumnWidth(args[0]->Uint32Value(),
+@@ -830,6 +836,7 @@ static void GetStringWidth(const Functio
+   while (n < value.length()) {
+     p = c;
+     U16_NEXT(str, n, value.length(), c);
++#ifdef NODE_HAVE_SMALL_ICU
+     // Don't count individual emoji codepoints that occur within an
+     // emoji sequence. This is not necessarily foolproof. Some
+     // environments display emoji sequences in the appropriate
+@@ -846,6 +853,7 @@ static void GetStringWidth(const Functio
+          u_hasBinaryProperty(c, UCHAR_EMOJI_MODIFIER))) {
+       continue;
+     }
++#endif  // NODE_HAVE_SMALL_ICU
+     width += GetColumnWidth(c, ambiguous_as_full_width);
+   }
+   args.GetReturnValue().Set(width);

@@ -1,0 +1,273 @@
+Index: node-v8.9.4/Makefile
+===================================================================
+--- node-v8.9.4.orig/Makefile
++++ node-v8.9.4/Makefile
+@@ -102,6 +102,9 @@ config.gypi: configure
+ 
+ install: all ## Installs node into $PREFIX (default=/usr/local).
+ 	$(PYTHON) tools/install.py $@ '$(DESTDIR)' '$(PREFIX)'
++	mkdir -p $(DESTDIR)/$(PREFIX)/lib/pkgconfig
++	sed s:%PREFIX%:$(PREFIX):g v8.pc > $(DESTDIR)/$(PREFIX)/lib/pkgconfig/v8.pc
++	(cd $(DESTDIR)/$(PREFIX)/lib/pkgconfig; ln -sf v8.pc node.pc)
+ 
+ uninstall: ## Uninstalls node from $PREFIX (default=/usr/local).
+ 	$(PYTHON) tools/install.py $@ '$(DESTDIR)' '$(PREFIX)'
+Index: node-v8.9.4/node.gyp
+===================================================================
+--- node-v8.9.4.orig/node.gyp
++++ node-v8.9.4/node.gyp
+@@ -1057,7 +1057,29 @@
+             }
+           ]
+         }
+-      ], # end targets
+-    }], # end aix section
++      ], # end aix section
++    }],
++    ['node_shared=="true" and OS=="linux"', {
++        'targets': [
++        {
++            'target_name': 'nodejs',
++            'type': 'executable',
++            'dependencies': ['<(node_core_target_name)'],
++
++            'include_dirs': [
++                'src',
++                'deps/v8/include',
++            ],
++
++            'sources': [
++                'src/node_main.cc',
++                '<@(library_files)',
++                # node.gyp is added to the project by default.
++                'common.gypi',
++            ],
++
++            'ldflags': ['-L<(PRODUCT_DIR)/obj.target/','-l:libnode.so.57'],
++        } ]
++    } ], # end targets
+   ], # end conditions block
+ }
+Index: node-v8.9.4/src/node.cc
+===================================================================
+--- node-v8.9.4.orig/src/node.cc
++++ node-v8.9.4/src/node.cc
+@@ -174,7 +174,7 @@ static const int v8_default_thread_pool_
+ static int v8_thread_pool_size = v8_default_thread_pool_size;
+ static bool prof_process = false;
+ static bool v8_is_profiling = false;
+-static bool node_is_initialized = false;
++bool node_is_initialized = false;
+ static node_module* modpending;
+ static node_module* modlist_builtin;
+ static node_module* modlist_internal;
+@@ -255,7 +255,7 @@ bool linux_at_secure = false;
+ static double prog_start_time;
+ 
+ static Mutex node_isolate_mutex;
+-static v8::Isolate* node_isolate;
++v8::Isolate* node_isolate;
+ 
+ node::DebugOptions debug_options;
+ 
+@@ -1144,6 +1144,7 @@ bool DomainsStackHasErrorHandler(const E
+   return false;
+ }
+ 
++}
+ 
+ bool ShouldAbortOnUncaughtException(Isolate* isolate) {
+   HandleScope scope(isolate);
+@@ -1158,6 +1159,7 @@ bool ShouldAbortOnUncaughtException(Isol
+   return isEmittingTopLevelDomainError || !DomainsStackHasErrorHandler(env);
+ }
+ 
++namespace {
+ 
+ Local<Value> GetDomainProperty(Environment* env, Local<Object> object) {
+   Local<Value> domain_v =
+Index: node-v8.9.4/src/node_contextify.cc
+===================================================================
+--- node-v8.9.4.orig/src/node_contextify.cc
++++ node-v8.9.4/src/node_contextify.cc
+@@ -523,6 +523,55 @@ class ContextifyContext {
+   }
+ };
+ 
++}
++/*MODIFIED CODE BEGIN*/
++void deleteContextifyContext(void *ctx)
++{
++  ContextifyContext* context =  (ContextifyContext*)ctx;
++  if (nullptr != context)
++    delete context;
++}
++
++v8::Handle<Context> makeContext(v8::Isolate *isolate, v8::Handle<Object> sandbox)  // basically MakeContext()  circa line 268
++{
++    Environment* env = Environment::GetCurrent(isolate);
++
++    if (!sandbox->IsObject()) {
++      env->ThrowTypeError("sandbox argument must be an object.");
++      return Local<Context>();
++    }
++    EscapableHandleScope  scope( isolate );
++
++    // Don't allow contextifying a sandbox multiple times.
++    CHECK(
++        !sandbox->HasPrivate(
++            env->context(),
++            env->contextify_context_private_symbol()).FromJust());
++
++    TryCatch try_catch(env->isolate());
++    ContextifyContext* context = new ContextifyContext(env, sandbox);
++
++    if (try_catch.HasCaught()) {
++        try_catch.ReThrow();
++        return Local<Context>();
++    }
++
++    if (context->context().IsEmpty())
++        return Local<Context>();
++
++    sandbox->SetPrivate(
++        env->context(),
++        env->contextify_context_private_symbol(),
++        External::New(env->isolate(), context));
++
++    Local<Context>  local_context = context->context(); // returns a local context
++
++    return scope.Escape( local_context );
++}
++/*MODIFIED CODE END*/
++
++namespace {
++
+ class ContextifyScript : public BaseObject {
+  private:
+   Persistent<UnboundScript> script_;
+Index: node-v8.9.4/tools/install.py
+===================================================================
+--- node-v8.9.4.orig/tools/install.py
++++ node-v8.9.4/tools/install.py
+@@ -124,10 +124,13 @@ def files(action):
+   if 'false' == variables.get('node_shared'):
+     if is_windows:
+       output_file += '.exe'
++    action([output_prefix + output_file], 'bin/' + output_file)
+   else:
+     if is_windows:
+       output_file += '.dll'
+     else:
++      if sys.platform != "darwin":
++        action([output_prefix + output_file], 'bin/' + output_file)
+       output_file = 'lib' + output_file + '.' + variables.get('shlib_suffix')
+       # GYP will output to lib.target except on OS X, this is hardcoded
+       # in its source - see the _InstallableTargetInstallPath function.
+@@ -166,10 +169,44 @@ def headers(action):
+     'src/node_api.h',
+     'src/node_api_types.h',
+     'src/node_buffer.h',
++
++    'src/node_internals.h',
++    'src/node_javascript.h',
++    'src/util.h',
++    'src/util-inl.h',
++    'src/env.h',
++    'src/env-inl.h',
++    'src/node_mutex.h',
++    'src/inspector_agent.h',
++    'src/handle_wrap.h',
++    'src/async-wrap.h',
++    'src/base-object.h',
++    'src/req-wrap.h',
++    'src/aliased_buffer.h',
++    'src/node_debug_options.h',
++    'src/node_platform.h',
++    'src/node_perf_common.h',
++    'src/node_http2_state.h',
++
+     'src/node_object_wrap.h',
+     'src/node_version.h',
++    'src/node_contextify_mods.h',
++
++    'deps/cares/include/ares.h',
++    'deps/cares/include/ares_build.h',
++    'deps/cares/include/ares_rules.h',
++    'deps/cares/include/ares_version.h',
++    'deps/cares/include/nameser.h',
+   ], 'include/node/')
+ 
++  action([
++    'src/tracing/agent.h',
++    'src/tracing/node_trace_buffer.h',
++    'src/tracing/node_trace_writer.h',
++    'src/tracing/trace_event.h',
++    'src/tracing/trace_event_common.h',
++  ], 'include/node/tracing/')
++
+   # Add the expfile that is created on AIX
+   if sys.platform.startswith('aix'):
+     action(['out/Release/node.exp'], 'include/node/')
+Index: node-v8.9.4/v8.pc
+===================================================================
+--- /dev/null
++++ node-v8.9.4/v8.pc
+@@ -0,0 +1,9 @@
++prefix=%PREFIX%
++libdir=${prefix}/lib
++includedir=${prefix}/include/node/
++
++Name: v8
++Description: node.js in library configuration has v8 inside
++Version: 6.9.0
++Cflags: -I${includedir}
++Libs: -L${libdir} -l:libnode.so.57
+Index: node-v8.9.4/src/node_contextify_mods.h
+===================================================================
+--- /dev/null
++++ node-v8.9.4/src/node_contextify_mods.h
+@@ -0,0 +1,15 @@
++/*MODIFIED CODE BEGIN*/
++// This is not part of Node... added to expose needed methods.
++
++#include "v8.h"
++
++namespace node
++{
++  class Environment;
++
++  v8::Handle<v8::Context> makeContext(v8::Isolate *isolate, v8::Handle<v8::Object> sandbox);
++  void deleteContextifyContext(void*);
++}
++
++/*MODIFIED CODE END*/
++
+Index: node-v8.9.4/src/node.h
+===================================================================
+--- node-v8.9.4.orig/src/node.h
++++ node-v8.9.4/src/node.h
+@@ -191,6 +191,10 @@ typedef intptr_t ssize_t;
+ 
+ namespace node {
+ 
++NODE_EXTERN extern v8::Isolate* node_isolate;
++NODE_EXTERN bool ShouldAbortOnUncaughtException(v8::Isolate* isolate);
++NODE_EXTERN extern bool node_is_initialized;
++
+ NODE_EXTERN extern bool no_deprecation;
+ #if HAVE_OPENSSL
+ NODE_EXTERN extern bool ssl_openssl_cert_store;
+Index: node-v8.9.4/node.gypi
+===================================================================
+--- node-v8.9.4.orig/node.gypi
++++ node-v8.9.4/node.gypi
+@@ -9,7 +9,7 @@
+       },
+     }, {
+       'defines': [
+-        'NODE_SHARED_MODE',
++        '_NODE_SHARED_MODE',
+       ],
+       'conditions': [
+         [ 'node_module_version!="" and OS!="win"', {

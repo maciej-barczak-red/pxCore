@@ -129,12 +129,16 @@ if [ ! -e node/libnode.dylib ] ||
 then
 
   cd node
+  for file in `find ./patches -iname *.patch`
+  do
+    patch -p1 < $file
+  done
   ./configure --shared
   make "-j${make_parallel}"
-  ln -sf out/Release/obj.target/libnode.so.48 libnode.so.48
-  ln -sf libnode.so.48 libnode.so
-  ln -sf out/Release/libnode.48.dylib libnode.48.dylib
-  ln -sf libnode.48.dylib libnode.dylib
+  ln -sf out/Release/obj.target/libnode.so.57 libnode.so.57
+  ln -sf libnode.so.57 libnode.so
+  ln -sf out/Release/libnode.57.dylib libnode.57.dylib
+  ln -sf libnode.57.dylib libnode.dylib
   cd ..
 
 fi
