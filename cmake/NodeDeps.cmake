@@ -28,6 +28,15 @@ if (NOT NODE_FOUND)
       if (NOT WIN32)
           set(NODE_LIBRARY_DIRS ${NODE_LIBRARY_DIRS} ${NODEDIR})
           set(NODE_LIBRARIES ${NODE_LIBRARIES} node)
+          if(APPLE)
+              set(NODE_LIBRARY_DIRS ${NODE_LIBRARY_DIRS}
+                      ${NODEDIR}/out/Release
+              )
+              set(NODE_LIBRARIES ${NODE_LIBRARIES}
+                      v8_libplatform
+                      v8_libbase
+              )
+          endif(APPLE)
       else (NOT WIN32)
           set(NODE_INCLUDE_DIRS ${NODE_INCLUDE_DIRS}
               ${NODEDIR}/deps/openssl/openssl/include ${NODEDIR}/deps/http_parser
